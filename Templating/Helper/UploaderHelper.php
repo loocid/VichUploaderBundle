@@ -4,6 +4,7 @@ namespace Vich\UploaderBundle\Templating\Helper;
 
 use Symfony\Component\Templating\Helper\Helper;
 use Vich\UploaderBundle\Storage\StorageInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * UploaderHelper.
@@ -13,6 +14,11 @@ use Vich\UploaderBundle\Storage\StorageInterface;
 class UploaderHelper extends Helper
 {
     /**
+     * @var \Symfony\Component\DependencyInjection\ContainerInterface $container
+     */
+    protected $container;
+
+    /**
      * @var \Vich\UploaderBundle\Storage\StorageInterface $storage
      */
     protected $storage;
@@ -21,15 +27,17 @@ class UploaderHelper extends Helper
      * @var string $webDirName
      */
     protected $webDirName;
-    
+
     /**
      * Constructs a new instance of UploaderHelper.
      *
-     * @param \Vich\UploaderBundle\Storage\StorageInterface $storage The storage.
-     * @param string $webDirName The name of the application's web directory.
+     * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+     * @param \Vich\UploaderBundle\Storage\StorageInterface $storage
+     * @param $webDirName
      */
-    public function __construct(StorageInterface $storage, $webDirName)
+    public function __construct(ContainerInterface $container, StorageInterface $storage, $webDirName)
     {
+        $this->container = $container;
         $this->storage = $storage;
         $this->webDirName = $webDirName;
     }
@@ -50,14 +58,37 @@ class UploaderHelper extends Helper
      * 
      * @param object $obj The object.
      * @param string $field The field.
+     * @param boolean $absolute True if URL should be absolute, false relative.
      * @return string The public asset path.
      */
-    public function asset($obj, $field)
+    public function asset($obj, $field, $absolute = false)
     {
         $path = $this->storage->resolvePath($obj, $field);
 
         $index = strpos($path, $this->webDirName);
+        $relPath = substr($path, $index + strlen($this->webDirName));
 
-        return substr($path, $index + strlen($this->webDirName));
+        if ($absolute) {
+            return $this->generateAbsoluteUrl($relPath);
+        }
+
+        return $relPath;
+    }
+
+    /**
+     * Generates an absolute path to the file based on the http host.
+     *
+     * @param string $relPath The relative path.
+     * @return string The absolute URL.
+     */
+    protected function generateAbsoluteUrl($relPath)
+    {
+        $request = $this->container->get('request');
+
+        return sprintf('%s://%s%s',
+            $request->getScheme(),
+            $request->getHttpHost(),
+            $relPath
+        );
     }
 }
