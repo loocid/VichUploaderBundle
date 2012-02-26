@@ -46,7 +46,9 @@ class FileSystemStorage implements StorageInterface
                 $name = $file->getClientOriginalName();
             }
 
-            $file->move($mapping->getUploadDir(), $name);
+            $fullname = sprintf('%s/%s', $mapping->getUploadDir(), $name);
+
+            $file->move(dirname($fullname), basename($fullname));
 
             $mapping->getFileNameProperty()->setValue($obj, $name);
         }
