@@ -41,12 +41,14 @@ class FileInjector implements FileInjectorInterface
                     continue;
                 }
 
-                $path = sprintf('%s/%s', $mapping->getUploadDir(), $name);
+				if (! $mapping->getProperty()->getValue($obj) instanceof File) {
+					$path = sprintf('%s/%s', $mapping->getUploadDir(), $name);
 
-                $mapping->getProperty()->setValue(
-                    $obj,
-                    new File($path, false)
-                );
+					$mapping->getProperty()->setValue(
+						$obj,
+						new File($path, false)
+					);
+				}
             }
         }
     }
